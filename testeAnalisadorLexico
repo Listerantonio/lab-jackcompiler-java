@@ -1,0 +1,102 @@
+import java.util.HashMap;
+import java.util.Map;
+
+public class Lexer {
+    private String input;
+    private int position;
+    private static final Map<String, TokenType> keywords;
+
+    static {
+        keywords = new HashMap<>();
+        keywords.put("if", TokenType.IF);
+        keywords.put("else", TokenType.ELSE);
+        // Adicione outras palavras reservadas conforme necessário
+    }
+
+    public Lexer(String input) {
+        this.input = input;
+        this.position = 0;
+    }
+
+    public Token getNextToken() {
+        skipWhitespace();
+
+        if (position >= input.length()) {
+            return new Token(TokenType.EOF, "");
+        }
+
+        char ch = input.charAt(position);
+
+        if (Character.isDigit(ch)) {
+            return scanNumber();
+        } else if (Character.isLetter(ch)) {
+            return scanIdentifierOrKeyword();
+        } else if (ch == '"') {
+            return scanString();
+        } else if (isOperator(ch)) {
+            return scanOperator();
+        } else {
+            throw new RuntimeException("Invalid character: " + ch);
+        }
+    }
+
+    private void skipWhitespace() {
+        while (position < input.length() && Character.isWhitespace(input.charAt(position))) {
+            position++;
+        }
+    }
+
+    private Token scanNumber() {
+        StringBuilder lexeme = new StringBuilder();
+        while (position < input.length() && Character.isDigit(input.charAt(position))) {
+            lexeme.append(input.charAt(position));
+            position++;
+        }
+        return new Token(TokenType.NUMBER, lexeme.toString());
+    }
+
+    private Token scanIdentifierOrKeyword() {
+        StringBuilder lexeme = new StringBuilder();
+        while (position < input.length() && (Character.isLetterOrDigit(input.charAt(position)) || input.charAt(position) == '_')) {
+            lexeme.append(input.charAt(position));
+            position++;
+        }
+        String identifier = lexeme.toString();
+        TokenType tokenType = keywords.getOrDefault(identifier, TokenType.IDENTIFIER);
+        return new Token(tokenType, identifier);
+    }
+
+    private Token scanString() {
+        StringBuilder lexeme = new StringBuilder();
+        position++; // Avança além da primeira aspa dupla
+        while (position < input.length() && input.charAt(position) != '"') {
+            lexeme.append(input.charAt(position));
+            position++;
+        }
+        position++; // Avança além da última aspa dupla
+        return new Token(TokenType.STRING, lexeme.toString());
+    }
+
+    private Token scanOperator() {
+        char ch = input.charAt(position);
+        position++;
+        switch (ch) {
+            case '+':
+                return new Token(TokenType.PLUS, "+");
+            case '-':
+                return new Token(TokenType.MINUS, "-");
+            case '*':
+                return new Token(TokenType.MULTIPLY, "*");
+            case '/':
+                return new Token(TokenType.DIVIDE, "/");
+            case '=':
+                return new Token(TokenType.EQUALS, "=");
+            default:
+                throw new RuntimeException("Invalid operator: " + ch);
+        }
+    }
+
+    private boolean isOperator(char ch) {
+        return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '=';
+    }
+}
